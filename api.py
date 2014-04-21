@@ -11,12 +11,12 @@ from protorpc import messages
 from protorpc import remote
 
 import pocketmon as pm
+from google.appengine.api import users
 
 package = 'PocketMon'
 
 class StatsRequest(messages.Message):
     ""
-    username = messages.StringField(1, required=True)
     timestamp_start = messages.FloatField(2, required=True)
     timestamp_end = messages.FloatField(3, required=True)
 
@@ -33,9 +33,13 @@ class PocketMonApi(remote.Service):
                       path='stats', http_method='GET',
                       name='stats.get')
     def get_stats(self, request):
-        count, words = pm.PocketItem.getAddedStats(request.username,
-                                                   request.timestamp_start,
-                                                   request.timestamp_end)
+        current_user = users.get_current_user()
+        if current_user is None:
+            raise endpoints.ForbiddenException()
+        count, words = pm.PocketItem.getAddedStats(
+                                           current_user.email(),
+                                           request.timestamp_start,
+                                           request.timestamp_end)
         return Stats(count=count, words=words)
 
 app = endpoints.api_server([PocketMonApi])

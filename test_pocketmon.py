@@ -94,7 +94,10 @@ class TestApi(unittest.TestCase):
     
     def setUp(self):
         self.testbed = testbed.Testbed()
-        self.testbed.setup_env(current_version_id='testbed.version')
+        self.testbed.setup_env(
+                current_version_id='testbed.version',
+                USER_EMAIL='test-user-1',
+                overwrite=True)
         #needed because endpoints expects a . in this value
         self.testbed.activate()
         self.testbed.init_datastore_v3_stub()
@@ -108,8 +111,7 @@ class TestApi(unittest.TestCase):
     def testApiGetStatsEmpty(self):
         resp = self.testapp.post_json(
                            '/_ah/spi/PocketMonApi.get_stats',
-                           {'username': 'test-user-1',
-                            'timestamp_start': 0,
+                           {'timestamp_start': 0,
                             'timestamp_end': 999999999})
         self.assertDictEqual(resp.json,
                              {'count': '0', 'words': '0'})
@@ -118,8 +120,7 @@ class TestApi(unittest.TestCase):
         pm.update_items_from_pocket(test_items_1['test-user-1'], 'test-user-1')
         resp = self.testapp.post_json(
                            '/_ah/spi/PocketMonApi.get_stats',
-                           {'username': 'test-user-1',
-                            'timestamp_start': 1390586000,
+                           {'timestamp_start': 1390586000,
                             'timestamp_end': 1393496000})
         self.assertDictEqual(resp.json,
                              {'count': '2', 'words': '1862'})
