@@ -1,7 +1,10 @@
 import unittest
+import webtest
+import endpoints
 from google.appengine.ext import testbed
 
 import pocketmon as pm
+import api
 
 test_items_1 = {
     'test-user-1': {
@@ -86,6 +89,40 @@ class TestFetchItems(unittest.TestCase):
                                                    1395995600.5)
         self.assertEqual(2, items)
         self.assertEqual(2135, words)
+
+class TestApi(unittest.TestCase):
+    
+    def setUp(self):
+        self.testbed = testbed.Testbed()
+        self.testbed.setup_env(current_version_id='testbed.version')
+        #needed because endpoints expects a . in this value
+        self.testbed.activate()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_memcache_stub()
+        self.app = endpoints.api_server([api.PocketMonApi], restricted=False)
+        self.testapp = webtest.TestApp(self.app)
+    
+    def tearDown(self):
+        self.testbed.deactivate()
+    
+    def testApiGetStatsEmpty(self):
+        resp = self.testapp.post_json(
+                           '/_ah/spi/PocketMonApi.get_stats',
+                           {'username': 'test-user-1',
+                            'timestamp_start': 0,
+                            'timestamp_end': 999999999})
+        self.assertDictEqual(resp.json,
+                             {'count': '0', 'words': '0'})
+    
+    def testApiGetStatsData(self):
+        pm.update_items_from_pocket(test_items_1['test-user-1'], 'test-user-1')
+        resp = self.testapp.post_json(
+                           '/_ah/spi/PocketMonApi.get_stats',
+                           {'username': 'test-user-1',
+                            'timestamp_start': 1390586000,
+                            'timestamp_end': 1393496000})
+        self.assertDictEqual(resp.json,
+                             {'count': '2', 'words': '1862'})
 
 if __name__ == '__main__':
     unittest.main()
