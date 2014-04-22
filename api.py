@@ -17,13 +17,16 @@ package = 'PocketMon'
 
 class StatsRequest(messages.Message):
     ""
-    timestamp_start = messages.FloatField(2, required=True)
-    timestamp_end = messages.FloatField(3, required=True)
+    timestamp = messages.FloatField(1)
 
 class Stats(messages.Message):
     ""
-    count = messages.IntegerField(1)
-    words = messages.IntegerField(2)
+    unread_items = messages.IntegerField(1)
+    unread_words = messages.IntegerField(2)
+    added_items_delta = messages.IntegerField(3)
+    added_words_delta = messages.IntegerField(4)
+    read_items_delta = messages.IntegerField(5)
+    read_words_delta = messages.IntegerField(6)
 
 @endpoints.api(name='pocketmon', version='v1')
 class PocketMonApi(remote.Service):
@@ -36,10 +39,8 @@ class PocketMonApi(remote.Service):
         current_user = users.get_current_user()
         if current_user is None:
             raise endpoints.ForbiddenException()
-        count, words = pm.PocketItem.getAddedStats(
-                                           current_user.email(),
-                                           request.timestamp_start,
-                                           request.timestamp_end)
-        return Stats(count=count, words=words)
+        stats = pm.PocketItem.getAllStats(current_user.email(),
+                                          request.timestamp)
+        return Stats(**stats)
 
 app = endpoints.api_server([PocketMonApi])

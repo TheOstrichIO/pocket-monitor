@@ -89,6 +89,20 @@ class TestFetchItems(unittest.TestCase):
                                                    1395995600.5)
         self.assertEqual(2, items)
         self.assertEqual(2135, words)
+    
+    def testGetAllStats(self):
+        pm.update_items_from_pocket(test_items_1['test-user-1'],
+                                    'test-user-1')
+        all_stats = pm.PocketItem.getAllStats('test-user-1', 1393912000)
+        self.assertDictEqual(all_stats,
+                             {
+                            'unread_items': 11,
+                            'unread_words': 12937,
+                            'added_items_delta': 0,
+                            'added_words_delta': 0,
+                            'read_items_delta': 1,
+                            'read_words_delta': 230,
+                            })
 
 class TestApi(unittest.TestCase):
     
@@ -109,21 +123,31 @@ class TestApi(unittest.TestCase):
         self.testbed.deactivate()
     
     def testApiGetStatsEmpty(self):
-        resp = self.testapp.post_json(
-                           '/_ah/spi/PocketMonApi.get_stats',
-                           {'timestamp_start': 0,
-                            'timestamp_end': 999999999})
+        resp = self.testapp.post_json('/_ah/spi/PocketMonApi.get_stats')
         self.assertDictEqual(resp.json,
-                             {'count': '0', 'words': '0'})
+                             {
+                            'unread_items': '0',
+                            'unread_words': '0',
+                            'added_items_delta': '0',
+                            'added_words_delta': '0',
+                            'read_items_delta': '0',
+                            'read_words_delta': '0',
+                            })
     
     def testApiGetStatsData(self):
         pm.update_items_from_pocket(test_items_1['test-user-1'], 'test-user-1')
         resp = self.testapp.post_json(
                            '/_ah/spi/PocketMonApi.get_stats',
-                           {'timestamp_start': 1390586000,
-                            'timestamp_end': 1393496000})
+                           {'timestamp': 1393912000,})
         self.assertDictEqual(resp.json,
-                             {'count': '2', 'words': '1862'})
+                             {
+                            'unread_items': '11',
+                            'unread_words': '12937',
+                            'added_items_delta': '0',
+                            'added_words_delta': '0',
+                            'read_items_delta': '1',
+                            'read_words_delta': '230',
+                            })
 
 if __name__ == '__main__':
     unittest.main()

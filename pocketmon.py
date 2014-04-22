@@ -50,6 +50,29 @@ class PocketItem(ndb.Model):
     @classmethod
     def getReadStats(cls, dir_name, ts, te):
         return cls.getAttrStats('time_read', dir_name, ts, te)
+    
+    @classmethod
+    def getStatsToTimestamp(cls, dir_name, ts):
+        added_count, added_words = cls.getAddedStats(dir_name, 0, ts)
+        read_count, read_words = cls.getReadStats(dir_name, 1, ts)
+        return (added_count - read_count, added_words - read_words)
+    
+    @classmethod
+    def getAllStats(cls, dir_name, ts=None, delta=86400):
+        if ts is None:
+            ts = time.time()
+        pre_ts = ts - delta
+        unread_items, unread_words = cls.getStatsToTimestamp(dir_name, ts)
+        added_items, added_words = cls.getAddedStats(dir_name, pre_ts, ts)
+        read_items, read_words = cls.getReadStats(dir_name, pre_ts, ts)
+        return {
+            'unread_items': unread_items,
+            'unread_words': unread_words,
+            'added_items_delta': added_items,
+            'added_words_delta': added_words,
+            'read_items_delta': read_items,
+            'read_words_delta': read_words,
+            }
 
 def update_item_from_pocket(pid, new_item, dir_name):
     ancestor_key = ndb.Key('PocketDir', dir_name)
